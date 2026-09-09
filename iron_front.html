@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IRON FRONT — Tactical War Game</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#071018;color:#e8eef2;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+canvas{display:block;width:100%;height:100%;cursor:crosshair}
+#hud{position:fixed;inset:0;pointer-events:none}
+.panel{position:absolute;background:linear-gradient(180deg,rgba(8,17,24,.88),rgba(8,17,24,.68));border:1px solid rgba(160,190,205,.22);box-shadow:0 12px 35px #0008;backdrop-filter:blur(7px)}
+#top{left:18px;top:18px;padding:12px 15px;border-radius:12px;min-width:260px}
+#title{font-weight:900;letter-spacing:3px;font-size:15px;color:#fff}
+#subtitle{font-size:10px;color:#8fa3ad;letter-spacing:1.5px;margin-top:2px}
+.row{display:flex;gap:18px;margin-top:10px;font-size:12px}.v{font-weight:800;color:#fff}
+.bar{height:5px;background:#26353c;border-radius:9px;overflow:hidden;margin-top:7px}.fill{height:100%;background:#70d6a2;width:100%}
+#ammo{right:18px;bottom:18px;padding:15px 18px;border-radius:13px;text-align:right;min-width:170px}
+#ammoNum{font-size:36px;font-weight:900;line-height:1}.small{font-size:10px;color:#8fa3ad;letter-spacing:1.5px}
+#mission{right:18px;top:18px;padding:13px 15px;border-radius:12px;width:245px}
+#mission b{font-size:12px;letter-spacing:1px}.objective{margin-top:7px;font-size:11px;color:#a9bbc3;line-height:1.5}
+#hint{left:50%;bottom:20px;transform:translateX(-50%);padding:8px 13px;border-radius:9px;font-size:11px;color:#b8c6cc}
+#cross{position:absolute;left:50%;top:50%;width:22px;height:22px;transform:translate(-50%,-50%);opacity:.85}
+#cross:before,#cross:after{content:"";position:absolute;background:#fff;box-shadow:0 0 6px #000}.x1{left:10px;top:0;width:2px;height:8px}.x2{left:10px;bottom:0;width:2px;height:8px}.x3{left:0;top:10px;width:8px;height:2px}.x4{right:0;top:10px;width:8px;height:2px}
+#start,#end{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,#1d3540aa,#02070cdd 70%);z-index:5}
+.card{width:min(620px,calc(100% - 32px));padding:35px;border:1px solid #91aab533;border-radius:20px;background:#08131beF;box-shadow:0 25px 80px #000b}
+h1{margin:0;font-size:42px;letter-spacing:7px}h2{margin:7px 0 22px;color:#7fe0b1;font-size:13px;letter-spacing:4px}
+p{color:#aab9c0;line-height:1.7;font-size:14px}
+button{border:0;border-radius:9px;padding:13px 22px;background:#dbe8e5;color:#071018;font-weight:900;letter-spacing:1px;cursor:pointer}
+button:hover{filter:brightness(1.1)}kbd{padding:2px 6px;border:1px solid #71838b55;border-radius:4px;background:#15232b;color:#fff}
+#end{display:none}.stats{display:flex;gap:28px;margin:22px 0}.stat strong{display:block;font-size:25px}.stat span{font-size:10px;color:#8fa3ad;letter-spacing:1px}
+
+.startBtns,.endBtns{display:flex;gap:10px;margin-top:8px}.secondary{background:#1a2a31;color:#dbe8e5;border:1px solid #78909a55}
+.overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#02070ccc;z-index:6}
+.loadCard{width:min(720px,calc(100% - 32px));padding:26px;border-radius:18px;background:#08131bf5;border:1px solid #91aab533;box-shadow:0 25px 80px #000d}
+.loadHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.loadTitle{font-size:28px;font-weight:900;letter-spacing:4px}.close{background:transparent;color:#aebdc2;font-size:28px;padding:0 8px}
+.weaponGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.weaponChoice{background:#0d1b21;border:1px solid #7f959c33;color:#e8eef2;text-align:left;border-radius:12px;padding:15px;min-height:135px}
+.weaponChoice:hover{border-color:#7fe0b177}.weaponChoice.selected{border-color:#7fe0b1;background:#13252b;box-shadow:inset 0 0 0 1px #7fe0b144}
+.weaponChoice b{display:block;letter-spacing:1px}.weaponChoice span{display:block;color:#a9bbc3;font-size:11px;margin:7px 0 12px;line-height:1.4}.weaponChoice em{font-style:normal;color:#7fe0b1;font-size:10px}
+.explosiveRow{margin:14px 0;padding:13px;border:1px solid #7f959c33;border-radius:12px;display:flex;justify-content:space-between;align-items:center;background:#0b181d}.grenadeIcon{width:38px;height:38px;border-radius:10px;background:#22352e;display:grid;place-items:center;color:#e1f5e7;font-size:18px}
+@media(max-width:720px){.weaponGrid{grid-template-columns:1fr}.loadCard{max-height:88vh;overflow:auto}}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud">
+  <div id="top" class="panel">
+    <div id="title">IRON FRONT</div><div id="subtitle">SECTOR 07 // NIGHTFALL</div>
+    <div class="row"><span>HEALTH <span class="v" id="hpTxt">100</span></span><span>ENEMIES <span class="v" id="enemyTxt">0</span></span></div>
+    <div class="bar"><div class="fill" id="hpBar"></div></div>
+  </div>
+  <div id="mission" class="panel"><b>MISSION // HOLD THE LINE</b><div class="objective">Secure the ruined industrial yard. Eliminate hostile units and survive the counterattack.</div></div>
+  <div id="ammo" class="panel"><div class="small" id="weaponHud">VX-30 CARBINE</div><div id="ammoNum">30</div><div class="small">R // RELOAD</div></div>
+  <div id="hint" class="panel">WASD move · Mouse/trackpad aim & fire · R reload · Shift sprint</div>
+  <div id="cross"><i class="x1"></i><i class="x2"></i><i class="x3"></i><i class="x4"></i></div>
+</div>
+<div id="start"><div class="card">
+<h1>IRON FRONT</h1><h2>TACTICAL COMBAT // SINGLE PLAYER</h2>
+<p>You are the last defender of a remote industrial outpost. Push through the abandoned yard, hold your position, and stop the incoming hostile squad. The battlefield is fictional and stylized.</p>
+<p><kbd>W A S D</kbd> move &nbsp; <kbd>SHIFT</kbd> sprint &nbsp; <kbd>MOUSE</kbd> aim/fire &nbsp; <kbd>R</kbd> reload &nbsp; <kbd>1–3</kbd> weapons &nbsp; <kbd>G</kbd> explosive</p>
+<div class="startBtns"><button id="play">DEPLOY</button><button id="loadoutBtn" class="secondary">LOADOUT</button></div>
+</div></div>
+<div id="loadout" class="overlay"><div class="loadCard">
+  <div class="loadHead"><div><div class="loadTitle">LOADOUT</div><div class="small">SELECT YOUR KIT BEFORE DEPLOYMENT</div></div><button id="closeLoadout" class="close">×</button></div>
+  <div class="weaponGrid">
+    <button class="weaponChoice selected" data-weapon="0"><b>VX-30 CARBINE</b><span>Balanced automatic rifle</span><em>Damage 34 · 10.5 r/s · 30 mag</em></button>
+    <button class="weaponChoice" data-weapon="1"><b>RAVEN SMG</b><span>Fast fire, lighter hits</span><em>Damage 22 · 16 r/s · 36 mag</em></button>
+    <button class="weaponChoice" data-weapon="2"><b>M-17 MARKSMAN</b><span>Heavy damage, slower action</span><em>Damage 76 · 2.8 r/s · 8 mag</em></button>
+  </div>
+  <div class="explosiveRow"><div><b>VORTEX GRENADE</b><div class="small">Press G to throw · blast + enemy slow effect</div></div><div class="grenadeIcon">◆</div></div>
+  <button id="saveLoadout">SAVE LOADOUT</button>
+</div></div>
+<div id="end"><div class="card"><h1 id="endTitle">SECTOR SECURED</h1><h2 id="endSub">MISSION COMPLETE</h2><div class="stats"><div class="stat"><strong id="kills">0</strong><span>HOSTILES STOPPED</span></div><div class="stat"><strong id="time">0:00</strong><span>TIME</span></div></div><div class="endBtns"><button id="again">DEPLOY AGAIN</button><button id="homeBtn" class="secondary">HOME SCREEN</button></div></div></div>
+<script>
+const c=document.getElementById('game'),ctx=c.getContext('2d');let W,H,DPR;
+function resize(){DPR=devicePixelRatio||1;W=innerWidth;H=innerHeight;c.width=W*DPR;c.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0)}addEventListener('resize',resize);resize();
+const keys={},mouse={x:W/2,y:H/2,down:false};addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=1;if(e.key.toLowerCase()==='r')reload();if(e.key.toLowerCase()==='g')throwExplosive();if(['1','2','3'].includes(e.key))selectWeapon(+e.key-1)});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=0);
+addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;});c.addEventListener('mousedown',()=>mouse.down=1);addEventListener('mouseup',()=>mouse.down=0);
+
+const weapons=[
+ {name:'VX-30 CARBINE',damage:34,rate:.095,mag:30,pellets:1,spread:.035,range:1.1,bulletSpeed:690,kind:'rifle'},
+ {name:'RAVEN SMG',damage:22,rate:.062,mag:36,pellets:1,spread:.065,range:1.0,bulletSpeed:720,kind:'smg'},
+ {name:'M-17 MARKSMAN',damage:76,rate:.36,mag:8,pellets:1,spread:.012,range:1.55,bulletSpeed:880,kind:'marksman'}
+];
+
+const start=document.getElementById('start'),end=document.getElementById('end'),loadout=document.getElementById('loadout');
+const loadoutBtn=document.getElementById('loadoutBtn'),closeLoadout=document.getElementById('closeLoadout'),saveLoadout=document.getElementById('saveLoadout');
+let selectedWeapon=0;
+function selectWeapon(i){selectedWeapon=i;document.querySelectorAll('.weaponChoice').forEach(b=>b.classList.toggle('selected',+b.dataset.weapon===i));if(p){equip(i)}}
+function equip(i){selectedWeapon=i;p.weapon=i;p.ammo=weapons[i].mag;p.max=weapons[i].mag;reloadT=0;document.getElementById('weaponHud').textContent=weapons[i].name;document.getElementById('ammoNum').textContent=p.ammo}
+document.querySelectorAll('.weaponChoice').forEach(b=>b.onclick=()=>selectWeapon(+b.dataset.weapon));
+loadoutBtn.onclick=()=>loadout.style.display='flex';
+closeLoadout.onclick=()=>loadout.style.display='none';
+saveLoadout.onclick=()=>{loadout.style.display='none';};
+document.getElementById('play').onclick=()=>{start.style.display='none';reset();last=performance.now();requestAnimationFrame(loop);};
+document.getElementById('again').onclick=()=>{end.style.display='none';reset();last=performance.now();requestAnimationFrame(loop);};
+document.getElementById('homeBtn').onclick=()=>{
+  end.style.display='none';
+  start.style.display='flex';
+  gameOver=true;
+  if(document.exitPointerLock) document.exitPointerLock();
+  draw();
+};
+
+let p,enemies,bullets,particles,decor,explosives,score,startTime,last,spawnTimer,gameOver,reloadT,slowUntil,slowPulse;
+const rnd=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+function reset(){
+ p={x:W/2,y:H/2,r:15,hp:100,ammo:weapons[selectedWeapon].mag,max:weapons[selectedWeapon].mag,fire:0,angle:0,speed:190,weapon:selectedWeapon,grenades:5};
+ enemies=[];bullets=[];particles=[];decor=[];explosives=[];score=0;spawnTimer=1;gameOver=false;startTime=performance.now();reloadT=0;slowUntil=0;slowPulse=0;
+ for(let i=0;i<85;i++)decor.push({x:rnd(20,W-20),y:rnd(20,H-20),w:rnd(12,55),h:rnd(8,35),r:rnd(-.5,.5),type:Math.random()});
+ for(let i=0;i<5;i++)spawnEnemy();last=performance.now();equip(selectedWeapon);requestAnimationFrame(loop)
+}
+function spawnEnemy(){let side=Math.floor(rnd(0,4)),x=side<2?rnd(30,W-30):(side===2?15:W-15),y=side<2?(side===0?15:H-15):rnd(30,H-30);enemies.push({x,y,r:13,hp:65,max:65,speed:rnd(55,78),shoot:rnd(.4,1.8),flash:0,phase:rnd(0,6),hit:0})}
+function reload(){if(p&&p.ammo<p.max&&reloadT<=0)reloadT=1.15}
+function shoot(){
+ if(p.fire>0||reloadT>0||p.ammo<=0)return;let w=weapons[p.weapon];p.fire=w.rate;p.ammo--;
+ for(let k=0;k<w.pellets;k++){let a=Math.atan2(mouse.y-p.y,mouse.x-p.x)+rnd(-w.spread,w.spread),sp=w.bulletSpeed;bullets.push({x:p.x+Math.cos(a)*18,y:p.y+Math.sin(a)*18,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:w.range,damage:w.damage,enemy:0})}
+ let muzzle= p.weapon===2 ? 9 : 5;
+ for(let i=0;i<muzzle;i++)particles.push({x:p.x+Math.cos(p.angle)*18,y:p.y+Math.sin(p.angle)*18,vx:rnd(25,130)*Math.cos(p.angle)+rnd(-35,35),vy:rnd(25,130)*Math.sin(p.angle)+rnd(-35,35),life:.22,max:.22,type:'muzzle'})
+}
+function throwExplosive(){
+ if(!p||p.grenades<=0)return;p.grenades--;
+ let a=Math.atan2(mouse.y-p.y,mouse.x-p.x),dist=150,tx=clamp(p.x+Math.cos(a)*dist,35,W-35),ty=clamp(p.y+Math.sin(a)*dist,35,H-35);
+ explosives.push({x:p.x,y:p.y,tx,ty,t:0.65,done:false});
+ burst(p.x,p.y,7,'muzzle')
+}
+function detonate(x,y){
+ burst(x,y,34,'boom');
+ particles.push({x,y,vx:0,vy:0,life:.38,max:.38,type:'ring'});
+ slowUntil=performance.now()+2600;slowPulse=1;
+ for(let e of enemies){let d=Math.hypot(e.x-x,e.y-y);if(d<145){let fall=1-d/145;e.hp-=62*fall;e.hit=.14}}
+}
+function burst(x,y,n=8,type='dust'){for(let i=0;i<n;i++){let a=rnd(0,Math.PI*2),s=rnd(20,150);particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rnd(.25,.7),max:.7,type})}
+}
+function update(dt){
+ if(gameOver)return;p.fire=Math.max(0,p.fire-dt);spawnTimer-=dt;slowPulse=Math.max(0,slowPulse-dt);
+ let slowActive=performance.now()<slowUntil;
+ if(spawnTimer<=0&&enemies.length<13){spawnEnemy();spawnTimer=Math.max(.7,1.7-score*.006)}
+ if(reloadT>0){reloadT-=dt;if(reloadT<=0)p.ammo=p.max}
+ let ax=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),ay=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0),len=Math.hypot(ax,ay)||1,spd=p.speed*(keys.shift?1.55:1);
+ p.x=clamp(p.x+ax/len*spd*dt,18,W-18);p.y=clamp(p.y+ay/len*spd*dt,18,H-18);p.angle=Math.atan2(mouse.y-p.y,mouse.x-p.x);if(mouse.down)shoot();
+
+ for(let ex of explosives){ex.t-=dt;if(ex.t<=0&&!ex.done){ex.done=true;detonate(ex.tx,ex.ty)}else if(!ex.done){let prog=1-ex.t/.65;ex.x+=(ex.tx-ex.x)*Math.min(dt*8,1);ex.y+=(ex.ty-ex.y)*Math.min(dt*8,1)}}
+ explosives=explosives.filter(ex=>!ex.done || ex.t>-0.03);
+
+ for(let b of bullets){b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt}
+ let enemySlow=slowActive?.32:1;
+ for(let e of enemies){let dx=p.x-e.x,dy=p.y-e.y,d=Math.hypot(dx,dy)||1;let orbit=Math.sin(performance.now()/700+e.phase)*.35;
+  e.x+=dx/d*e.speed*enemySlow*dt-dy/d*e.speed*orbit*enemySlow*dt;e.y+=dy/d*e.speed*enemySlow*dt+dx/d*e.speed*orbit*enemySlow*dt;e.shoot-=dt;e.flash=Math.max(0,e.flash-dt);e.hit=Math.max(0,e.hit-dt);
+  if(d<230&&e.shoot<=0){e.shoot=rnd(1.0,1.8);let a=Math.atan2(p.y-e.y,p.x-e.x),s=270;bullets.push({x:e.x+Math.cos(a)*14,y:e.y+Math.sin(a)*14,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1.5,enemy:1,damage:14});burst(e.x+Math.cos(a)*15,e.y+Math.sin(a)*15,4,'muzzle')}
+  if(d<p.r+e.r)p.hp-=22*dt
+ }
+ for(let b of bullets){
+  if(b.enemy){if(Math.hypot(b.x-p.x,b.y-p.y)<p.r+3){b.life=0;p.hp-=b.damage;burst(p.x,p.y,4,'hit')}}
+  else for(let e of enemies)if(Math.hypot(b.x-e.x,b.y-e.y)<e.r+4){b.life=0;e.hp-=b.damage;burst(b.x,b.y,7,'hit');if(e.hp<=0){score++;burst(e.x,e.y,18,'dust')}}
+ }
+ bullets=bullets.filter(b=>b.life>0&&b.x>-30&&b.x<W+30&&b.y>-30&&b.y<H+30);enemies=enemies.filter(e=>e.hp>0);
+ if(p.hp<=0){finish(false);return}if(score>=20){finish(true);return}
+ for(let q of particles){q.x+=q.vx*dt;q.y+=q.vy*dt;q.vx*=.97;q.vy*=.97;q.life-=dt}
+ particles=particles.filter(q=>q.life>0);
+ document.getElementById('hpTxt').textContent=Math.ceil(p.hp);document.getElementById('hpBar').style.width=clamp(p.hp,0,100)+'%';
+ document.getElementById('enemyTxt').textContent=enemies.length;document.getElementById('ammoNum').textContent=reloadT>0?'...':p.ammo;
+ document.getElementById('weaponHud').textContent=weapons[p.weapon].name + (p.grenades>0?' · G x'+p.grenades:'');
+}
+function finish(win){gameOver=true;document.exitPointerLock?.();document.getElementById('endTitle').textContent=win?'SECTOR SECURED':'POSITION LOST';document.getElementById('endSub').textContent=win?'MISSION COMPLETE':'MISSION FAILED';document.getElementById('kills').textContent=score;let sec=Math.floor((performance.now()-startTime)/1000);document.getElementById('time').textContent=Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');end.style.display='flex'}
+
+function draw(){
+ ctx.fillStyle='#0b1519';ctx.fillRect(0,0,W,H);let g=ctx.createRadialGradient(W*.5,H*.45,80,W*.5,H*.45,Math.max(W,H)*.75);g.addColorStop(0,'#203a38');g.addColorStop(.55,'#13252a');g.addColorStop(1,'#071015');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ ctx.strokeStyle='rgba(145,177,160,.07)';ctx.lineWidth=1;for(let x=0;x<W;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=0;y<H;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+ for(let d of decor){ctx.save();ctx.translate(d.x,d.y);ctx.rotate(d.r);ctx.fillStyle=d.type>.5?'#1b2c2d':'#263b38';ctx.fillRect(-d.w/2,-d.h/2,d.w,d.h);ctx.strokeStyle='#41534f66';ctx.strokeRect(-d.w/2,-d.h/2,d.w,d.h);if(d.type>.7){ctx.fillStyle='#101c1e';ctx.fillRect(-d.w*.35,-d.h*.2,d.w*.7,d.h*.35)}ctx.restore()}
+ ctx.strokeStyle='#344746';ctx.lineWidth=42;ctx.globalAlpha=.35;ctx.beginPath();ctx.moveTo(0,H*.72);ctx.lineTo(W,H*.25);ctx.stroke();ctx.globalAlpha=1;
+ for(let ex of explosives){if(!ex.done){ctx.strokeStyle='#b8d0b0aa';ctx.setLineDash([5,7]);ctx.beginPath();ctx.moveTo(ex.x,ex.y);ctx.lineTo(ex.tx,ex.ty);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#d9ffe6';ctx.beginPath();ctx.arc(ex.x,ex.y,5,0,7);ctx.fill()}}
+ for(let b of bullets){ctx.strokeStyle=b.enemy?'#ff9b6e':'#d9ffe6';ctx.lineWidth=b.enemy?2:2.5;ctx.globalAlpha=.8;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x-b.vx*.025,b.y-b.vy*.025);ctx.stroke()}ctx.globalAlpha=1;
+ for(let e of enemies)drawEnemy(e);drawPlayer();
+ for(let q of particles){ctx.globalAlpha=q.life/q.max;if(q.type==='boom'){ctx.strokeStyle='#ffd38a';ctx.lineWidth=4;ctx.beginPath();ctx.arc(q.x,q.y,145*(1-q.life/q.max),0,7);ctx.stroke()}else if(q.type==='ring'){ctx.strokeStyle='#efffe9';ctx.lineWidth=7;ctx.beginPath();ctx.arc(q.x,q.y,145*(1-q.life/q.max),0,7);ctx.stroke()}else{ctx.fillStyle=q.type==='muzzle'?'#ffd38a':q.type==='hit'?'#e9f3e8':'#a0aaa1';ctx.beginPath();ctx.arc(q.x,q.y,q.type==='dust'?rnd(2,5):rnd(1,3),0,7);ctx.fill()}}ctx.globalAlpha=1;
+ if(performance.now()<slowUntil){ctx.fillStyle='rgba(100,190,255,.045)';ctx.fillRect(0,0,W,H);ctx.fillStyle='#a6d8f1';ctx.font='700 11px system-ui';ctx.fillText('ENEMY MOVEMENT DISRUPTED',24,H-50)}
+ let v=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*.25,W/2,H/2,Math.max(W,H)*.7);v.addColorStop(0,'transparent');v.addColorStop(1,'rgba(0,0,0,.5)');ctx.fillStyle=v;ctx.fillRect(0,0,W,H);
+}
+function drawPlayer(){let a=p.angle;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(a);ctx.fillStyle='#0b1115';ctx.beginPath();ctx.arc(0,0,17,0,7);ctx.fill();ctx.fillStyle='#4f6e67';ctx.beginPath();ctx.arc(0,0,13,0,7);ctx.fill();ctx.fillStyle='#b7c7c0';ctx.beginPath();ctx.arc(5,-5,5,0,7);ctx.fill();ctx.fillStyle='#171d20';ctx.fillRect(8,-3,30,6);ctx.fillStyle='#d2a46b';ctx.fillRect(35,-2,5,4);ctx.restore()}
+function drawEnemy(e){let a=Math.atan2(p.y-e.y,p.x-e.x);ctx.save();ctx.translate(e.x,e.y);ctx.rotate(a);ctx.fillStyle=e.hit?'#e7eee7':'#151d20';ctx.beginPath();ctx.arc(0,0,15,0,7);ctx.fill();ctx.fillStyle='#7e4e47';ctx.beginPath();ctx.arc(0,0,11,0,7);ctx.fill();ctx.fillStyle='#1a2226';ctx.fillRect(7,-3,22,6);ctx.restore();ctx.fillStyle='#0b0f11aa';ctx.fillRect(e.x-17,e.y-24,34,4);ctx.fillStyle='#d66b5f';ctx.fillRect(e.x-17,e.y-24,34*Math.max(0,e.hp/e.max),4)}
+function loop(t){
+ let dt=Math.min(.033,(t-last)/1000);last=t;
+ update(dt);draw();
+ if(!gameOver) requestAnimationFrame(loop);
+}
+start.style.display='flex';
+draw();
+</script>
+</body></html>

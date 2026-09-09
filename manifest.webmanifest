@@ -1,0 +1,13 @@
+{
+  "name": "IRON FRONT",
+  "short_name": "IRON FRONT",
+  "description": "A tactical single-player browser war game.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#071018",
+  "theme_color": "#09141a",
+  "icons": [
+    {"src":"./logo.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}

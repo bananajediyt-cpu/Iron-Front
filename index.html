@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#09141a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="logo.svg">
+<title>IRON FRONT — Tactical Combat</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:#071018;color:#e8eef2}
+body{background:
+ radial-gradient(circle at 80% 15%,#284d4650,transparent 35%),
+ radial-gradient(circle at 15% 85%,#1b3c3540,transparent 36%),
+ linear-gradient(135deg,#071018,#0b191f 55%,#071018)}
+.wrap{width:min(1060px,calc(100% - 34px));margin:auto;padding:34px 0 50px}
+nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:60px}
+.brand{display:flex;align-items:center;gap:12px;font-weight:900;letter-spacing:3px}.brand img{width:44px;height:44px}
+.links{display:flex;gap:16px}.links a{color:#a9bbc3;text-decoration:none;font-size:13px}.links a:hover{color:#fff}
+.hero{display:grid;grid-template-columns:1.08fr .92fr;gap:44px;align-items:center}
+.badge{display:inline-block;border:1px solid #7fe0b144;border-radius:999px;padding:7px 10px;color:#7fe0b1;font-size:10px;letter-spacing:2px}
+h1{font-size:clamp(48px,8vw,88px);line-height:.92;margin:18px 0 18px;letter-spacing:7px}
+.lead{font-size:17px;color:#aebdc4;line-height:1.7;max-width:620px}
+.actions{display:flex;gap:11px;flex-wrap:wrap;margin:28px 0}button,a.btn{font:inherit;text-decoration:none;border:0;border-radius:10px;padding:13px 18px;font-weight:900;letter-spacing:1px;cursor:pointer;background:#dbe8e5;color:#071018}
+a.btn.alt{background:#17272f;color:#dbe8e5;border:1px solid #7f959c44}
+.preview{padding:14px;border-radius:22px;border:1px solid #91aab52f;background:#071018b8;box-shadow:0 25px 70px #0008}
+.preview img{width:100%;display:block;border-radius:14px;aspect-ratio:1/1;object-fit:cover}
+.faux{aspect-ratio:1/1;border-radius:14px;background:
+ radial-gradient(circle at 50% 45%,#355550 0 2%,transparent 2.2%),
+ repeating-linear-gradient(90deg,transparent 0 48px,#89ad9a0a 49px),
+ repeating-linear-gradient(0deg,transparent 0 48px,#89ad9a0a 49px),
+ linear-gradient(145deg,#152a2c,#091318);position:relative;overflow:hidden}
+.faux:after{content:"";position:absolute;inset:18%;border:1px solid #7fe0b133;transform:rotate(14deg);box-shadow:0 0 90px #7fe0b111}
+section{margin-top:86px}.sectionTitle{font-size:12px;letter-spacing:3px;color:#7fe0b1}
+.features{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}.feature{padding:18px;border-radius:14px;background:#0b171db8;border:1px solid #91aab52b}.feature b{display:block;margin-bottom:8px}.feature span{font-size:12px;color:#98aab1;line-height:1.5}
+footer{margin-top:80px;color:#62757e;font-size:11px;display:flex;justify-content:space-between}
+@media(max-width:820px){.hero{grid-template-columns:1fr}.features{grid-template-columns:1fr 1fr}nav{margin-bottom:35px}}
+@media(max-width:520px){.features{grid-template-columns:1fr}.links{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <div class="brand"><img src="logo.svg" alt="IRON FRONT logo"><span>IRON FRONT</span></div>
+  <div class="links"><a href="#features">Features</a><a href="iron_front.html">Play</a></div>
+</nav>
+<main class="hero">
+  <div>
+    <div class="badge">TACTICAL COMBAT // SINGLE PLAYER</div>
+    <h1>IRON<br>FRONT</h1>
+    <p class="lead">A fast, stylized browser combat game with custom loadouts, multiple weapons, explosives, enemy slow effects, and a mission to secure the sector.</p>
+    <div class="actions">
+      <a class="btn" href="iron_front.html">PLAY NOW</a>
+      <a class="btn alt" href="iron_front.html" download>DOWNLOAD GAME</a>
+      <button id="installBtn" class="btn alt" style="display:none">INSTALL WEB APP</button>
+    </div>
+    <p style="font-size:11px;color:#71838b">The install button appears when your browser supports installing the site as an app.</p>
+  </div>
+  <div class="preview"><div class="faux"></div></div>
+</main>
+<section id="features">
+  <div class="sectionTitle">LOADOUT // BATTLEFIELD</div>
+  <div class="features">
+    <div class="feature"><b>3 WEAPONS</b><span>Choose a balanced carbine, fast SMG, or hard-hitting marksman rifle.</span></div>
+    <div class="feature"><b>EXPLOSIVES</b><span>Throw Vortex Grenades for area damage and a temporary enemy slow effect.</span></div>
+    <div class="feature"><b>MISSION</b><span>Survive the counterattack and secure the sector by stopping 20 hostiles.</span></div>
+    <div class="feature"><b>WEB APP</b><span>Install it from a supported browser and launch IRON FRONT like an app.</span></div>
+  </div>
+</section>
+<footer><span>IRON FRONT</span><span>Fictional game · v1.0</span></footer>
+</div>
+<script>
+let deferredPrompt=null;
+const installBtn=document.getElementById("installBtn");
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;installBtn.style.display="inline-block"});
+installBtn.addEventListener("click",async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.style.display="none"});
+if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js"));
+</script>
+</body>
+</html>
